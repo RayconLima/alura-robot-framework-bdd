@@ -1,0 +1,16 @@
+# Python virtual env
+.venv/
+
+# Robot Framework output files
+output.xml
+log.html
+report.html
+
+# Browser driver logs and screenshots
+geckodriver-*.log
+selenium-screenshot-*.png
+
+# Editor / OS files
+*.swp
+*~
+.DS_Store
