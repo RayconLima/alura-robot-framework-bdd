@@ -4,7 +4,9 @@ Este projeto é parte do curso **Robot Framework: automatizando testes no padrã
 
 ## Estrutura do projeto
 
-- `primeiro_teste.robot` - teste principal mostrando abertura do navegador, preenchimento de formulário e validação de elemento.
+- `preenchimento_correto.robot` - valida o preenchimento correto do formulário e cenários de sucesso.
+- `preenchimento_incorreto.robot` - valida as mensagens de erro e fluxos de preenchimento inválido.
+- `setup_teardown.robot` - mostra uso de `Suite Setup`, `Suite Teardown`, `Test Setup` e `Test Teardown`.
 - `.gitignore` - ignore de arquivos temporários e relatórios de teste.
 - `log.html`, `report.html`, `output.xml` - arquivos gerados pelo Robot Framework ao executar testes.
 
@@ -38,9 +40,14 @@ Este projeto é parte do curso **Robot Framework: automatizando testes no padrã
 
 No diretório `curso_robot`:
 
-```bash
-robot primeiro_teste.robot
-```
+- Executar um teste específico:
+  ```bash
+  robot preenchimento_correto.robot
+  ```
+- Executar todos os testes da pasta:
+  ```bash
+  robot .
+  ```
 
 ## Observações
 
