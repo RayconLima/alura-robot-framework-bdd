@@ -57,10 +57,3 @@ jobs:
           path: ./results
           name: robot-test-results
           retention-days: 7
-
-      - name: Publish test results
-        if: always()
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          files: ./results/output.xml
-          check_name: Robot Framework Tests
