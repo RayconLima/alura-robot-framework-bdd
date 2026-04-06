@@ -2,7 +2,8 @@
 Resource           ../main.robot
 
 *** Variables ***
-${URL}                    http://localhost:3000/
+${BASE_URL}               https://robot-framework-organo.vercel.app/
+${URL}                    ${BASE_URL}
 ${CAMPO_NOME}             id:form-nome
 ${CAMPO_CARGO}            id:form-cargo
 ${CAMPO_IMAGEM}           id:form-imagem
@@ -47,7 +48,6 @@ Então criar e identificar 1 card em cada time disponível
         Click Element    ${time}
         E clique no botão criar card
     END
-    Sleep   10s
 
 Dado que eu clique o botão criar card
     Click Element    ${BOTAO_CARD}
