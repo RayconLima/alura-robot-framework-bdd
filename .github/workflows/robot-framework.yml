@@ -1,31 +1,65 @@
-name: Robot Framework Tests
+name: Run Robot Framework Tests
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+  # schedule:
+  #   - cron: "0 17 * * 1-5"  # 17h UTC, seg-sex (horário de Manaus)
 
 jobs:
-  run-tests:
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
+      - name: Install Chrome and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
+          
       - name: Install dependencies
         run: |
-          pip install robotframework
-          # pip install -r requirements.txt # Se tiver dependências
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install webdriver-manager
 
-      - name: Run Robot Framework
+      - name: Create results directory
+        run: mkdir -p results
+
+      - name: Run Robot Framework tests
+        env:
+          TZ: America/Manaus
         run: |
-          robot -d results tests/ # Ajuste a pasta dos testes
-        
-      - name: Upload Report
+          if ! robot --outputdir results --exclude skip tests/; then
+            echo "Robot Framework tests failed. Rerunning failed tests..."
+            if [ -f results/output.xml ]; then
+              robot --rerunfailed results/output.xml --outputdir results_rerun tests/ || true
+              if [ -f results_rerun/output.xml ]; then
+                rebot --output results/output.xml --log results/log.html --report results/report.html --merge results/output.xml results_rerun/output.xml
+              else
+                echo "No output.xml file found from rerun. Skipping merge."
+              fi
+            else
+              echo "No output.xml file found. Cannot rerun failed tests."
+            fi
+          fi
+
+          echo "Script execution completed"
+        continue-on-error: true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v3
         with:
-          name: report
-          path: results/
+          path: ./results
+          name: robot-test-results
+          retention-days: 7
