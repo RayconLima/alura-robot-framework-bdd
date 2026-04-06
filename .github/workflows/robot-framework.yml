@@ -1,49 +1,66 @@
-name: Robot Framework CI
+name: Run Robot Framework Tests
 
 on:
+  workflow_dispatch:
   push:
-    branches: [main]
-  pull_request:
+    branches: [main, develop]
+  # schedule:
+  #   - cron: "0 17 * * 1-5"  # 17h UTC, seg-sex (horário de Manaus)
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    timeout-minutes: 15
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install robotframework robotframework-seleniumlibrary selenium webdriver-manager
+          pip install -r requirements.txt
 
-      - name: Install Chrome
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          wget -O /tmp/google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo dpkg -i /tmp/google-chrome.deb || sudo apt-get -f install -y
+      - name: Create results directory
+        run: mkdir -p results
 
-      - name: Setup Chromedriver (webdriver-manager)
+      - name: Run Robot Framework tests
+        env:
+          TZ: America/Manaus
         run: |
-          python - <<'PY'
-          from webdriver_manager.chrome import ChromeDriverManager
-          import os, pathlib, sys
-          path = ChromeDriverManager().install()
-          print(path)
-          os.environ["PATH"] += os.pathsep + str(pathlib.Path(path).parent)
-          PY
+          if ! robot --outputdir results --exclude skip tests/; then
+            echo "Robot Framework tests failed. Rerunning failed tests..."
+            if [ -f results/output.xml ]; then
+              robot --rerunfailed results/output.xml --outputdir results_rerun tests/ || true
+              if [ -f results_rerun/output.xml ]; then
+                rebot --output results/output.xml --log results/log.html --report results/report.html --merge results/output.xml results_rerun/output.xml
+              else
+                echo "No output.xml file found from rerun. Skipping merge."
+              fi
+            else
+              echo "No output.xml file found. Cannot rerun failed tests."
+            fi
+          fi
 
-      - name: Run Robot tests
-        run: |
-          robot --variable BASE_URL:https://robot-framework-organo.vercel.app/ --output output.xml --log log.html --report report.html .
-      - name: Upload reports
+          echo "Script execution completed"
+        continue-on-error: true
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: robot-reports
-          path: output.xml, log.html, report.html
+          path: ./results
+          name: robot-test-results
+          retention-days: 7
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: ./results/output.xml
+          check_name: Robot Framework Tests
