@@ -3,3 +3,4 @@ robotframework-seleniumlibrary==6.8.0
 robotframework-faker==6.0.0
 Faker==40.12.0
 selenium==4.41.0
+webdriver-manager==4.0.1
